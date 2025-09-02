@@ -1,3 +1,4 @@
+local gui = game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("EpikGUI"); if gui then gui:Destroy() end
 local player = game.Players.LocalPlayer
 local mouse = player:GetMouse()
 
