@@ -1,0 +1,197 @@
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "EpikGUI"
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 9999
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- 🧱 Docked Launcher
+local dock = Instance.new("TextButton")
+dock.Size = UDim2.new(0, 120, 0, 30)
+dock.Position = UDim2.new(0, 10, 1, -40)
+dock.Text = "Epik GUI"
+dock.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+dock.TextColor3 = Color3.new(1, 1, 1)
+dock.Font = Enum.Font.SourceSansBold
+dock.TextSize = 16
+dock.Parent = gui
+dock.Active = true
+dock.Draggable = true
+
+-- 🧿 Constrain Dock to Bottom
+dock:GetPropertyChangedSignal("Position"):Connect(function()
+    local y = dock.Position.Y.Scale
+    local offsetY = dock.Position.Y.Offset
+    if y ~= 1 or offsetY < -100 then
+        dock.Position = UDim2.new(0, dock.Position.X.Offset, 1, math.max(-100, offsetY))
+    end
+end)
+
+-- 📁 Main Panel
+local panel = Instance.new("Frame")
+panel.Size = UDim2.new(0, 400, 0, 500)
+panel.Position = UDim2.new(0, 10, 1, -540)
+panel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+panel.BorderSizePixel = 0
+panel.Visible = false
+panel.Parent = gui
+
+-- 🖱️ Hover Reveal
+dock.MouseEnter:Connect(function()
+    panel.Visible = true
+end)
+panel.MouseLeave:Connect(function()
+    panel.Visible = false
+end)
+
+-- 🔍 Search Bar
+local searchBar = Instance.new("TextBox")
+searchBar.Size = UDim2.new(1, -20, 0, 30)
+searchBar.Position = UDim2.new(0, 10, 0, 10)
+searchBar.PlaceholderText = "Search scripts..."
+searchBar.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+searchBar.TextColor3 = Color3.new(1, 1, 1)
+searchBar.Font = Enum.Font.SourceSans
+searchBar.TextSize = 16
+searchBar.Parent = panel
+
+-- 📁 Tab Buttons
+local tabs = {"Movement", "Effects", "Server", "Tools", "Custom"}
+local tabFrames = {}
+
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, -20, 0, 30)
+tabBar.Position = UDim2.new(0, 10, 0, 50)
+tabBar.BackgroundTransparency = 1
+tabBar.Parent = panel
+
+local tabLayout = Instance.new("UIListLayout", tabBar)
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.Padding = UDim.new(0, 6)
+
+local activeTab = nil
+
+for _, tabName in ipairs(tabs) do
+    local tabBtn = Instance.new("TextButton")
+    tabBtn.Size = UDim2.new(0, 70, 0, 30)
+    tabBtn.Text = tabName
+    tabBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    tabBtn.TextColor3 = Color3.new(1, 1, 1)
+    tabBtn.Font = Enum.Font.SourceSansBold
+    tabBtn.TextSize = 14
+    tabBtn.Parent = tabBar
+
+    local tabFrame = Instance.new("ScrollingFrame")
+    tabFrame.Size = UDim2.new(1, -20, 1, -90)
+    tabFrame.Position = UDim2.new(0, 10, 0, 90)
+    tabFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    tabFrame.ScrollBarThickness = 6
+    tabFrame.BackgroundTransparency = 1
+    tabFrame.Visible = false
+    tabFrame.Parent = panel
+
+    local layout = Instance.new("UIListLayout", tabFrame)
+    layout.Padding = UDim.new(0, 6)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    tabFrames[tabName] = tabFrame
+
+    tabBtn.MouseButton1Click:Connect(function()
+        for _, frame in pairs(tabFrames) do frame.Visible = false end
+        tabFrame.Visible = true
+        activeTab = tabFrame
+    end)
+end
+
+-- 🧿 Script States
+local states = {}
+
+-- 🧿 Button Factory
+local function createScriptButton(tabName, label, onActivate, onDeactivate)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 40)
+    btn.Text = label .. ": OFF"
+    btn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 16
+    btn.Parent = tabFrames[tabName]
+
+    states[label] = false
+
+    btn.MouseButton1Click:Connect(function()
+        states[label] = not states[label]
+        btn.Text = label .. (states[label] and ": ON" or ": OFF")
+        if states[label] then
+            if onActivate then onActivate() end
+        else
+            if onDeactivate then onDeactivate() end
+        end
+    end)
+end
+
+-- 🧪 Example Scripts
+createScriptButton("Movement", "Fly",
+    function()
+        local char = player.Character or player.CharacterAdded:Wait()
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if humanoid then humanoid.PlatformStand = true end
+    end,
+    function()
+        local char = player.Character or player.CharacterAdded:Wait()
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if humanoid then humanoid.PlatformStand = false end
+    end
+)
+
+createScriptButton("Effects", "Spin",
+    function()
+        coroutine.wrap(function()
+            while states["Spin"] do
+                local root = player.Character:FindFirstChild("HumanoidRootPart")
+                if root then root.CFrame *= CFrame.Angles(0, math.rad(30), 0) end
+                wait(0.05)
+            end
+        end)()
+    end,
+    function() end
+)
+
+createScriptButton("Server", "Explode",
+    function()
+        local root = player.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            local explosion = Instance.new("Explosion")
+            explosion.Position = root.Position
+            explosion.BlastRadius = 10
+            explosion.BlastPressure = 500000
+            explosion.Parent = workspace
+        end
+    end,
+    function() end
+)
+
+createScriptButton("Tools", "Erase Animations",
+    function()
+        local char = player.Character or player.CharacterAdded:Wait()
+        local animate = char:FindFirstChild("Animate")
+        local animator = char:FindFirstChildWhichIsA("Animator", true)
+        if animate then animate.Disabled = true end
+        if animator then animator:Destroy() end
+    end,
+    function() end
+)
+
+-- 🔍 Search Filter
+searchBar:GetPropertyChangedSignal("Text"):Connect(function()
+    local query = searchBar.Text:lower()
+    for _, frame in pairs(tabFrames) do
+        for _, btn in pairs(frame:GetChildren()) do
+            if btn:IsA("TextButton") then
+                btn.Visible = btn.Text:lower():find(query) ~= nil
+            end
+        end
+    end
+end)
