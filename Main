@@ -90,7 +90,47 @@ for _, tabName in ipairs(tabs) do
     tabFrame.ScrollBarThickness = 6
     tabFrame.BackgroundTransparency = 1
     tabFrame.Visible = false
-    tabFrame.Parent = panel
+    tabFrame.Parent = panel 
+if tabName == "Custom" then
+    local editor = Instance.new("TextBox")
+    editor.Size = UDim2.new(1, -20, 0, 200)
+    editor.Position = UDim2.new(0, 10, 0, 0)
+    editor.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    editor.TextColor3 = Color3.new(1, 1, 1)
+    editor.Font = Enum.Font.Code
+    editor.TextSize = 14
+    editor.TextWrapped = true
+    editor.TextXAlignment = Enum.TextXAlignment.Left
+    editor.TextYAlignment = Enum.TextYAlignment.Top
+    editor.ClearTextOnFocus = false
+    editor.MultiLine = true
+    editor.PlaceholderText = "-- Write your script here"
+    editor.Text = ""
+    editor.Parent = tabFrame
+
+    local executeBtn = Instance.new("TextButton")
+    executeBtn.Size = UDim2.new(0, 120, 0, 40)
+    executeBtn.Position = UDim2.new(0, 10, 0, 210)
+    executeBtn.Text = "Execute"
+    executeBtn.BackgroundColor3 = Color3.fromRGB(80, 120, 80)
+    executeBtn.TextColor3 = Color3.new(1, 1, 1)
+    executeBtn.Font = Enum.Font.SourceSansBold
+    executeBtn.TextSize = 16
+    executeBtn.Parent = tabFrame
+
+    executeBtn.MouseButton1Click:Connect(function()
+        local code = editor.Text
+        local success, result = pcall(function()
+            local scriptObj = Instance.new("LocalScript")
+            scriptObj.Source = code
+            scriptObj.Name = "EpikInjected"
+            scriptObj.Parent = game:GetService("StarterPlayer"):WaitForChild("StarterPlayerScripts")
+        end)
+        if not success then
+            warn("Script execution failed:", result)
+        end
+    end)
+end
 
     local layout = Instance.new("UIListLayout", tabFrame)
     layout.Padding = UDim.new(0, 6)
